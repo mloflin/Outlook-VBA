@@ -172,7 +172,7 @@ a:
                             With olAppt
                                 'Define calendar item properties
                                 .Start = finDateBusySlot
-                                .MeetingStatus = olMeeting
+                                '.MeetingStatus = olMeeting
                                 .End = DateAdd("n", SlotLength, finDateBusySlot)
                                 .Subject = "Email"
                                 .Location = "Office"
@@ -182,11 +182,11 @@ a:
                                 .ReminderSet = True
                                 .Categories = "Self"
                                 
-                                Set myRequiredAttendee = .Recipients.Add("[personal email]")
-                                myRequiredAttendee.Type = olRequired
+                                'Set myRequiredAttendee = .Recipients.Add("[personal email]")
+                                'myRequiredAttendee.Type = olRequired
                                 
                                 .Save
-                                .Send
+                                '.Send
                             End With
                             
                             
@@ -199,6 +199,7 @@ a:
                             With olAppt
                                 'Define calendar item properties
                                 .Start = finDateBusySlot
+				.MeetingStatus = olMeeting
                                 .End = DateAdd("n", SlotLength, finDateBusySlot)
                                 .Subject = "Lunch"
                                 .Location = ""
@@ -207,7 +208,12 @@ a:
                                 .ReminderMinutesBeforeStart = 10
                                 .ReminderSet = True
                                 .Categories = "Self"
+                                
+				Set myRequiredAttendee = .Recipients.Add("[personal email]")
+                                myRequiredAttendee.Type = olRequired
+                                
                                 .Save
+                                .Send
                             End With
                             
                             'Save date to registry so it doesn't run again
