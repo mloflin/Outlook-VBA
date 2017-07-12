@@ -1,7 +1,7 @@
 Attribute VB_Name = "Automation"
 Sub Test()
 'BlockTime "Email"
-BlockTime "Lunch"
+BlockTime "Exercise"
 End Sub
 Sub None15()
     MakeAppointment 15, "", ""
@@ -29,7 +29,7 @@ Sub BlockTime(strType As String)
     If InProgress = "False" Then
         SaveSetting "InProgress", "Automation", "InProgress", "True"
         
-        Dim oCurrentUser As ExchangeUser
+        Dim oCurrentUser As Outlook.ExchangeUser
         Dim FreeBusy As String
         Dim BusySlot As Long
         Dim DateBusySlot As Date
@@ -50,6 +50,10 @@ Sub BlockTime(strType As String)
             
         ElseIf strType = "Lunch" Then
             setting = GetSetting("LastBlockLunch", "Automation", "Date", DateValue(Now) - 6)
+        
+        ElseIf strType = "Exercise" Then
+            setting = GetSetting("LastBlockExercise", "Automation", "Date", DateValue(Now) - 1)
+        
         End If
         'setting = DateAdd("d", -5, Now)
          
@@ -77,15 +81,19 @@ Sub BlockTime(strType As String)
                     
                     'TODO
                     'Reset arryDateSlot
-                    'Randomize SlotLength
-                    
-                    'Randomize the SlotLength
-                    Randomize
-                    RandNum = (2 * Rand) + 1
-                    If RandNum = 1 Then
-                        SlotLength = 60
-                    Else
-                        SlotLength = 30
+                                        
+                    'Randomize the SlotLength if Lunch otherwise - default to 30
+                    SlotLength = 30
+                    If strType = "Lunch" Or strType = "Exercise" Then
+                        Randomize
+                        RandNum = (3 * Rand) + 1
+                        If RandNum = 1 Then
+                            SlotLength = 60
+                        ElseIf RandNum = 2 Then
+                            SlotLength = 45
+                        Else
+                            SlotLength = 30
+                        End If
                     End If
 a:
                     'Reset FreeBusy
@@ -102,12 +110,12 @@ a:
                           'Morning 9:30-11:30
                           'Afternoon 1-5
                           'Single Day
-                          'Not Weekend
+                          'Not Weekend or Friday
                           If strType = "Email" Then
                               If ((TimeValue(DateBusySlot) >= TimeValue(#9:30:00 AM#) And TimeValue(DateBusySlot) <= TimeValue(#11:30:00 AM#)) Or _
                                    (TimeValue(DateBusySlot) >= TimeValue(#1:00:00 PM#) And TimeValue(DateBusySlot) < TimeValue(#5:00:00 PM#))) And _
                                    DateValue(DateBusySlot) >= DateAdd("d", 7 - (Y - 1), DateValue(Now)) And DateValue(DateBusySlot) < DateAdd("d", 8 - (Y - 1), DateValue(Now)) And _
-                                   Weekday(DateBusySlot) <> 7 And Weekday(DateBusySlot) <> 1 Then
+                                   Weekday(DateBusySlot) <> 7 And Weekday(DateBusySlot) <> 1 And Weekday(DateBusySlot) <> 6 Then
                                    
                                    aryDateBusySlot(X) = DateBusySlot
                                    X = X + 1
@@ -128,6 +136,18 @@ a:
                                    'Scheduled = True
                                  'Exit For
                               End If
+                            ElseIf strType = "Exercise" Then
+                               If TimeValue(DateBusySlot) >= TimeValue(#9:00:00 AM#) And TimeValue(DateBusySlot) <= TimeValue(#12:00:00 PM#) And _
+                                   DateValue(DateBusySlot) = DateAdd("d", 1, DateValue(Now)) And Weekday(DateBusySlot) <> 7 And _
+                                   Weekday(DateBusySlot) <> 1 And Weekday(DateBusySlot) <> 6 Then
+                                   
+                                   aryDateBusySlot(X) = DateBusySlot
+                                   X = X + 1
+                                   'MsgBox (oCurrentUser.name & " first open interval:" & vbCrLf & Format$(DateBusySlot, "dddd, mmm d yyyy hh:mm AMPM"))
+                                   
+                                   'Scheduled = True
+                                 'Exit For
+                              End If
                            End If
                        End If
                     Next i
@@ -135,6 +155,9 @@ a:
                     'If Array is empty and timeslot = 60 then try 30, if 30 then try 15
                     If aryDateBusySlot(1) = "12:00:00 AM" Then
                         If SlotLength = 60 Then
+                            SlotLength = 30
+                            GoTo a:
+                        ElseIf SlotLength = 45 Then
                             SlotLength = 30
                             GoTo a:
                         ElseIf SlotLength = 30 Then
@@ -167,8 +190,6 @@ a:
                             'Set the Appointment
                             Set olAppt = MyFolder.Items.Add(olAppointmentItem)
                             
-                            
-                            
                             With olAppt
                                 'Define calendar item properties
                                 .Start = finDateBusySlot
@@ -177,19 +198,13 @@ a:
                                 .Subject = "Email"
                                 .Location = "Office"
                                 .Body = "Created: " & Now
-                                .BusyStatus = olBusy
+                                .BusyStatus = olTentative
                                 .ReminderMinutesBeforeStart = 10
                                 .ReminderSet = True
                                 .Categories = "Self"
                                 
-                                'Set myRequiredAttendee = .Recipients.Add("[personal email]")
-                                'myRequiredAttendee.Type = olRequired
-                                
                                 .Save
-                                '.Send
                             End With
-                            
-                            
                             
                             'Save date to registry so it doesn't run again
                             SaveSetting "LastScheduleEmail", "Automation", "Date", Now
@@ -199,7 +214,7 @@ a:
                             With olAppt
                                 'Define calendar item properties
                                 .Start = finDateBusySlot
-				.MeetingStatus = olMeeting
+                                .MeetingStatus = olMeeting
                                 .End = DateAdd("n", SlotLength, finDateBusySlot)
                                 .Subject = "Lunch"
                                 .Location = ""
@@ -209,7 +224,7 @@ a:
                                 .ReminderSet = True
                                 .Categories = "Self"
                                 
-				Set myRequiredAttendee = .Recipients.Add("[personal email]")
+                                Set myRequiredAttendee = .Recipients.Add("matt.loflin@gmail.com")
                                 myRequiredAttendee.Type = olRequired
                                 
                                 .Save
@@ -218,6 +233,28 @@ a:
                             
                             'Save date to registry so it doesn't run again
                             SaveSetting "LastBlockLunch", "Automation", "Date", Now
+
+                        ElseIf strType = "Exercise" Then
+                            'Set the Appointment
+                            Set olAppt = MyFolder.Items.Add(olAppointmentItem)
+                            With olAppt
+                                'Define calendar item properties
+                                .Start = finDateBusySlot
+                                '.MeetingStatus = olMeeting
+                                .End = DateAdd("n", SlotLength, finDateBusySlot)
+                                .Subject = "Exercise"
+                                .Location = "Outside"
+                                .Body = "Created: " & Now
+                                .BusyStatus = olTentative
+                                .ReminderMinutesBeforeStart = 10
+                                .ReminderSet = True
+                                .Categories = "Self"
+                                
+                                .Save
+                            End With
+                            
+                            'Save date to registry so it doesn't run again
+                            SaveSetting "LastBlockExercise", "Automation", "Date", Now
                         End If
                     End If
 b:
@@ -295,7 +332,7 @@ Sub MakeAppointment(SlotLength As Integer, strFolder As String, var As String)
                               Set objOutlook = Application
                               Set objNamespace = objOutlook.GetNamespace("MAPI")
                               Set objSourceFolder = objNamespace.GetDefaultFolder(olFolderDrafts)
-                              Set objDestFolder = objNamespace.Folders("[work email]").Folders("Inbox").Folders(strFolder)
+                              Set objDestFolder = objNamespace.Folders("mloflin@microsoft.com").Folders("Inbox").Folders(strFolder)
         
                               objItem.Move objDestFolder
                             End If
@@ -334,7 +371,7 @@ Sub MakeAppointment(SlotLength As Integer, strFolder As String, var As String)
                               Set objOutlook = Application
                               Set objNamespace = objOutlook.GetNamespace("MAPI")
                               Set objSourceFolder = objNamespace.GetDefaultFolder(olFolderDrafts)
-                              Set objDestFolder = objNamespace.Folders("[work email]").Folders("Inbox").Folders(strFolder)
+                              Set objDestFolder = objNamespace.Folders("mloflin@microsoft.com").Folders("Inbox").Folders(strFolder)
         
                               objItem.Move objDestFolder
                             End If
