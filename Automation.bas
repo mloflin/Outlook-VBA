@@ -1,4 +1,4 @@
-Attribute VB_Name = "Automation"
+Attribute VB_Name = "Module1"
 Sub Test()
 'BlockTime "Email"
 BlockTime "Exercise"
@@ -46,10 +46,10 @@ Sub BlockTime(strType As String)
         Dim intDateDiff As Integer
         
         If strType = "Email" Then
-            setting = GetSetting("LastScheduleEmail", "Automation", "Date", DateValue(Now) - 6)
+            setting = GetSetting("LastScheduleEmail", "Automation", "Date", DateValue(Now) - 13)
             
         ElseIf strType = "Lunch" Then
-            setting = GetSetting("LastBlockLunch", "Automation", "Date", DateValue(Now) - 6)
+            setting = GetSetting("LastBlockLunch", "Automation", "Date", DateValue(Now) - 13)
         
         ElseIf strType = "Exercise" Then
             setting = GetSetting("LastBlockExercise", "Automation", "Date", DateValue(Now) - 1)
@@ -62,8 +62,8 @@ Sub BlockTime(strType As String)
          
             'Get the DateDiff
             intDateDiff = DateDiff("d", DateValue(setting), DateValue(Now))
-            If intDateDiff >= 7 Then 'don't want to do the past
-                intDateDiff = 6
+            If intDateDiff >= 14 Then 'don't want to do the past
+                intDateDiff = 13
             End If
                 
             'Set Variables
@@ -201,7 +201,7 @@ a:
                                 .BusyStatus = olTentative
                                 .ReminderMinutesBeforeStart = 10
                                 .ReminderSet = True
-                                .Categories = "Self"
+                                .Categories = "Task: Action Item"
                                 
                                 .Save
                             End With
@@ -242,13 +242,13 @@ a:
                                 .Start = finDateBusySlot
                                 '.MeetingStatus = olMeeting
                                 .End = DateAdd("n", SlotLength, finDateBusySlot)
-                                .Subject = "Exercise"
-                                .Location = "Outside"
+                                .Subject = "Read\Exercise"
+                                .Location = "Somewhere"
                                 .Body = "Created: " & Now
                                 .BusyStatus = olTentative
                                 .ReminderMinutesBeforeStart = 10
                                 .ReminderSet = True
-                                .Categories = "Self"
+                                .Categories = "Training"
                                 
                                 .Save
                             End With
@@ -404,3 +404,5 @@ Function GetCurrentItem() As Object
         
     Set objApp = Nothing
 End Function
+
+
